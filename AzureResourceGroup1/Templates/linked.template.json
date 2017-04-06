@@ -1,0 +1,39 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "linkedParameter": {
+      "type": "string",
+      "defaultValue": ""
+    }
+  },
+  "variables": {
+    "kaboom": "[parameters('linkedParameter')]"
+  },
+  "resources":[
+  {
+    "type": "Microsoft.Resources/deployments",
+    "apiVersion": "2015-01-01",
+    "name": "empty",
+    "properties": {
+      "mode": "Incremental",
+      "parameters": {},
+      "template": {
+        "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+        "contentVersion": "1.0.0.0",
+        "parameters": {},
+        "variables": {},
+        "resources": [],
+        "outputs": {
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "linkedTemplateOutput": {
+      "type": "string",
+      "value": "==== linked template output ===="
+    }
+  }
+    }

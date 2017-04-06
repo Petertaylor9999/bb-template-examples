@@ -1,0 +1,9 @@
+﻿{
+  "type": "Microsoft.Storage/storageAccounts",
+  "name": "[parameters('storageAccount').myStorageAccountName]",
+  "apiVersion": "2015-06-15",
+  "location": "[resourceGroup().location]",
+  "properties": {
+    "accountType": "Standard_LRS"
+  }
+}

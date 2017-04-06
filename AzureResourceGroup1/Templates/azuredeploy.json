@@ -1,0 +1,39 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccount": { "type": "object" },
+    "_artifactsLocationSasToken": { "type": "string" },
+    "_artifactsLocation": { "type": "string" },
+  },
+  "variables": {
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-01-01",
+      "name": "theNameOfTheLinkedTemplate",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[concat(parameters('_artifactsLocation'),'/Templates/linked.template.json')]",
+          "contentVersion": "1.0.0.0"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "firstMessage": {
+      "type": "string",
+      "value": "========= resource group location ========="
+    },
+    "outputOfTheTest": {
+      "type": "string",
+      "value": "[resourceGroup().location]"
+    },
+    "linkedTemplateOutput": {
+      "type": "string",
+      "value": "[reference('theNameOfTheLinkedTemplate').outputs.linkedTemplateOutput.value]"
+    }
+  }
+}
