@@ -2,38 +2,35 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "storageAccount": { "type": "object" },
-    "_artifactsLocationSasToken": { "type": "string" },
-    "_artifactsLocation": { "type": "string" },
+    "optionalArray": {
+      "type": "array",
+      "defaultValue": []
+    }
   },
   "variables": {
+    "optionalParameterArray": [
+      "[uri(deployment().properties.templateLink.uri, '../Parameters/noDeploy.parameters.json')]",
+      "[uri(deployment().properties.templateLink.uri, '../Parameters/deploy.parameters.json')]"
+    ],
+    "templateToInvoke": "[variables('optionalParameterArray')[mod(add(length(parameters('optionalArray')), 2), add(length(parameters('optionalArray')), 1))]]"
   },
   "resources": [
     {
       "apiVersion": "2015-01-01",
-      "name": "theNameOfTheLinkedTemplate",
       "type": "Microsoft.Resources/deployments",
+      "name": "[concat('number-of-array-elements-',length(parameters('optionalArray')))]",
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[concat(parameters('_artifactsLocation'),'/Templates/linked.template.json')]",
-          "contentVersion": "1.0.0.0"
-        }
+        "parameters": {},
+        "templateLink": { "uri": "[variables('templateToInvoke')]" }
       }
     }
+
   ],
   "outputs": {
-    "firstMessage": {
+    "result": {
       "type": "string",
-      "value": "========= resource group location ========="
-    },
-    "outputOfTheTest": {
-      "type": "string",
-      "value": "[resourceGroup().location]"
-    },
-    "linkedTemplateOutput": {
-      "type": "string",
-      "value": "[reference('theNameOfTheLinkedTemplate').outputs.linkedTemplateOutput.value]"
+      "value": ""
     }
   }
 }
