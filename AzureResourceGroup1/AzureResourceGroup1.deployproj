@@ -31,6 +31,10 @@
     <Content Include="Deploy-AzureResourceGroup.ps1" />
     <Content Include="Parameters\azuredeploy.parameters.json" />
     <Content Include="Templates\azuredeploy.json" />
+    <None Include="Parameters\deploy.parameters.json" />
+    <None Include="Parameters\no.parameters.json" />
+    <None Include="Parameters\noDeploy.parameters.json" />
+    <None Include="Parameters\yes.parameters.json" />
     <None Include="Templates\cutAndPasteBin.json" />
     <None Include="Templates\linked.template.json" />
   </ItemGroup>

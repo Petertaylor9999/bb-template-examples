@@ -5,7 +5,7 @@
 Param(
     [string] $ResourceGroupLocation = "westus",
     [string] $ResourceGroupName = 'AzureResourceGroup1',
-    [switch] $UploadArtifacts,
+    [switch] $UploadArtifacts = $True,
     [string] $StorageAccountName = 'yyzartifactstorage', #$ResourceGroupName.ToLowerInvariant() + '-artifactstorage',
     [string] $StorageContainerName = 'yyzartifactcontainer', #$ResourceGroupName.ToLowerInvariant() + '-stageartifacts',
     [string] $TemplateFile = 'Templates\azuredeploy.json',
@@ -32,8 +32,8 @@ function Format-ValidationOutput {
 }
 
 $OptionalParameters = New-Object -TypeName Hashtable
-$TemplateFile = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $TemplateFile))
-$TemplateParametersFile = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $TemplateParametersFile))
+#$TemplateFile = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $TemplateFile))
+#$TemplateParametersFile = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, $TemplateParametersFile))
 
 Login-AzureRmAccount -SubscriptionId $SubscriptionId 
 
@@ -120,9 +120,16 @@ if ($UploadArtifacts) {
         $OptionalParameters[$ArtifactsLocationSasTokenName] = $ArtifactsLocationSasToken
 		Write-Host "done and added to optional parameters"
     }
+	$TemplateFile = ($ArtifactsLocation + "/" + $TemplateFile);
+	$TemplateParametersFile = ($ArtifactsLocation + "/" + $TemplateParametersFile);
 }
 
 Write-Host @OptionalParameters
+Write-Host "Template file location: " $TemplateFile
+Write-Host "Parameter file location: " $TemplateParametersFile
+Write-Host "Resource group name: " $ResourceGroupName
+$templateUri = New-Object System.Uri -ArgumentList @($TemplateFile)
+$parameterFileUri = New-Object System.Uri -ArgumentList @($TemplateParametersFile)
 
 # Delete the existing resource group for testing, not using force so will prompt for confirmation each time
 if($DeleteExistingResourceGroup) { Remove-AzureRmResourceGroup -Name $ResourceGroupName }
@@ -139,13 +146,7 @@ if ($ValidateOnly) {
                                                                                   -Verbose)
 }
 else {
-    New-AzureRmResourceGroupDeployment -Name ((Get-ChildItem $TemplateFile).BaseName + '-' + ((Get-Date).ToUniversalTime()).ToString('MMdd-HHmm')) `
-                                       -ResourceGroupName $ResourceGroupName `
-                                       -TemplateFile $TemplateFile `
-                                       -TemplateParameterFile $TemplateParametersFile `
-                                       @OptionalParameters `
-                                       -Force -Verbose `
-                                       -ErrorVariable ErrorMessages
+    New-AzureRmResourceGroupDeployment -Name "testdeployment" -ResourceGroupName $ResourceGroupName -TemplateUri $TemplateUri -TemplateParameterUri $parameterFileUri
     $ErrorMessages = $ErrorMessages | ForEach-Object { $_.Exception.Message.TrimEnd("`r`n") }
 }
 if ($ErrorMessages)
