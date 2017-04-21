@@ -1,39 +1,93 @@
 ﻿{
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
-  "parameters": {
-    "storageAccount": { "type": "object" },
-    "_artifactsLocationSasToken": { "type": "string" },
-    "_artifactsLocation": { "type": "string" },
-  },
-  "variables": {
-  },
+  "parameters": {},
   "resources": [
+      {
+      "apiVersion": "2016-03-30",
+      "name": "firstVNet",
+      "location":"[resourceGroup().location]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "properties": {
+          "addressSpace":{"addressPrefixes": [
+              "10.0.0.0/22"
+          ]},
+          "subnets":[              
+              {
+                  "name":"firstSubnet",
+                  "properties":{
+                    "addressPrefix":"10.0.0.0/24"
+                  }
+              }
+            ]
+      }
+    },
+    {
+        "apiVersion": "2015-06-15",
+        "type":"Microsoft.Network/networkInterfaces",
+        "name":"nic1",
+        "location":"[resourceGroup().location]",
+        "dependsOn": [
+            "firstVNet"
+        ],
+        "properties": {
+            "ipConfigurations":[
+                {
+                    "name":"ipconfig1",
+                    "properties": {
+                        "privateIPAllocationMethod":"Dynamic",
+                        "subnet": {
+                            "id": "[concat(resourceId('Microsoft.Network/virtualNetworks','firstVNet'),'/subnets/firstSubnet')]"
+                        }
+                    }
+                }
+            ]
+        }
+    },
     {
       "apiVersion": "2015-01-01",
-      "name": "theNameOfTheLinkedTemplate",
       "type": "Microsoft.Resources/deployments",
+      "name": "updateVNet",
+      "dependsOn": [
+          "nic1"
+      ],
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[concat(parameters('_artifactsLocation'),'/Templates/linked.template.json')]",
-          "contentVersion": "1.0.0.0"
+        "parameters": {},
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+              {
+                  "apiVersion": "2016-03-30",
+                  "name": "firstVNet",
+                  "location":"[resourceGroup().location]",
+                  "type": "Microsoft.Network/virtualNetworks",
+                  "properties": {
+                      "addressSpace": "[reference('firstVNet').addressSpace]",
+                      "subnets":[
+                          {
+                              "name":"[reference('firstVNet').subnets[0].name]",
+                              "properties":{
+                                  "addressPrefix":"[reference('firstVNet').subnets[0].properties.addressPrefix]"
+                                  }
+                          },
+                          {
+                              "name":"secondSubnet",
+                              "properties":{
+                                  "addressPrefix":"10.0.1.0/24"
+                                  }
+                          }
+                     ]
+                  }
+              }
+          ],
+          "outputs": {}
+          }
         }
-      }
     }
   ],
-  "outputs": {
-    "firstMessage": {
-      "type": "string",
-      "value": "========= resource group location ========="
-    },
-    "outputOfTheTest": {
-      "type": "string",
-      "value": "[resourceGroup().location]"
-    },
-    "linkedTemplateOutput": {
-      "type": "string",
-      "value": "[reference('theNameOfTheLinkedTemplate').outputs.linkedTemplateOutput.value]"
-    }
-  }
+  "outputs": {}
 }
