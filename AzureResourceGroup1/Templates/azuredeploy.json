@@ -2,72 +2,59 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "condition": {
-      "type": "string"
-    },
-    "optionalString": {
-      "type": "string",
-      "defaultValue": ""
-    },
-    "optionalArray": {
+    "virtualNetworkPeerings": {
       "type": "array",
       "defaultValue": []
     }
   },
   "variables": {
-    "conditions": {
-      "no": "[uri(deployment().properties.templateLink.uri, '../Parameters/noDeploy.parameters.json')]",
-      "yes": "[uri(deployment().properties.templateLink.uri, '../Parameters/deploy.parameters.json')]"
-    },
-    "optionalParameter": [
-      "[uri(deployment().properties.templateLink.uri, '../Parameters/noDeploy.parameters.json')]",
-      "[uri(deployment().properties.templateLink.uri, '../Parameters/deploy.parameters.json')]"
-    ],
-    "templateToInvoke1": "[variables('optionalParameter')[mod(add(length(parameters('optionalString')), 2), add(length(parameters('optionalString')), 1))]]",
-    "optionalParameterArray": [
-      "[uri(deployment().properties.templateLink.uri, '../Parameters/noDeploy.parameters.json')]",
-      "[uri(deployment().properties.templateLink.uri, '../Parameters/deploy.parameters.json')]"
-    ],
-    "templateToInvoke2": "[variables('optionalParameter')[mod(add(length(parameters('optionalArray')), 2), add(length(parameters('optionalArray')), 1))]]"
+    "workaround": {
+       "true": "[parameters('virtualNetworkPeerings')]",
+       "false": [{
+           "name": "workaround",
+           "properties": {}
+       }]
+     },
+     "peerings": "[variables('workaround')[string(greater(length(parameters('virtualNetworkPeerings')), 0))]]"
   },
   "resources": [
     {
-      "apiVersion": "2015-01-01",
       "type": "Microsoft.Resources/deployments",
-      "name": "[concat('conditional-resource-',parameters('condition'))]",
+      "apiVersion": "2017-05-10",
+      "name": "[concat('vnp-', copyIndex())]",
+      "condition": "[greater(length(parameters('virtualNetworkPeerings')), 0)]",
+      "dependsOn": [
+        "virtualNetworks"
+      ],
+      "copy": {
+         "name": "vnpIterator",
+         "count": "[length(variables('peerings'))]",
+         "mode": "Serial"
+      },
       "properties": {
         "mode": "Incremental",
-        "parameters": {},
-        "templateLink": { "uri": "[variables('conditions')[tolower(parameters('condition'))]]" }
-
-      }
-    },
-    {
-      "apiVersion": "2015-01-01",
-      "type": "Microsoft.Resources/deployments",
-      "name": "[concat('number-of-parameters-',length(parameters('optionalString')))]",
-      "properties": {
-        "mode": "Incremental",
-        "parameters": {},
-        "templateLink": { "uri": "[variables('templateToInvoke1')]" }
-      }
-    },
-    {
-      "apiVersion": "2015-01-01",
-      "type": "Microsoft.Resources/deployments",
-      "name": "[concat('number-of-array-elements-',length(parameters('optionalArray')))]",
-      "properties": {
-        "mode": "Incremental",
-        "parameters": {},
-        "templateLink": { "uri": "[variables('templateToInvoke2')]" }
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2016-06-01",
+              "location": "[resourceGroup().location]",
+              "name": "[variables('peerings')[copyIndex()].name]",
+              "properties": "[variables('peerings')[copyIndex()].properties]"
+            }
+          ],
+          "outputs": {
+          }
+        }
       }
     }
-
   ],
   "outputs": {
-    "result": {
-      "type": "string",
-      "value": ""
-    }
   }
 }
